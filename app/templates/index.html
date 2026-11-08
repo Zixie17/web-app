@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Учёт рабочего времени сотрудников</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Верхняя шапка -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">⏱️</div>
+        <div>
+          <h1>Учёт Рабочего Времени</h1>
+          <p class="subtitle">Корпоративная система тайм-трекинга сотрудников</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-db">💾 SQLite БД активна</span>
+        <span class="badge badge-live" id="activeTimersCountBadge">🟢 0 активных таймеров</span>
+      </div>
+    </header>
+
+    <!-- Навигационные вкладки -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="tab-tracker">
+        <span class="tab-icon">⏱️</span> Таймер и трекинг
+      </button>
+      <button class="nav-tab" data-tab="tab-employees">
+        <span class="tab-icon">👥</span> Сотрудники (<span id="navEmployeesCount">0</span>)
+      </button>
+      <button class="nav-tab" data-tab="tab-reports">
+        <span class="tab-icon">📊</span> Отчёты за период
+      </button>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+
+      <!-- ВКЛАДКА 1: ТАЙМЕР И ТРЕКИНГ -->
+      <section id="tab-tracker" class="tab-pane active">
+        <div class="grid-two-columns">
+          <!-- Форма запуска таймера -->
+          <div class="card">
+            <div class="card-header">
+              <h2>🚀 Запуск учёта времени</h2>
+              <span class="card-hint">Выберите сотрудника и опишите задачу</span>
+            </div>
+            <form id="startTimerForm" class="form-vertical">
+              <div class="form-group">
+                <label for="timerEmployeeSelect">Сотрудник <span class="required">*</span></label>
+                <select id="timerEmployeeSelect" required>
+                  <option value="" disabled selected>-- Выберите сотрудника --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="taskDescriptionInput">Описание задачи <span class="required">*</span></label>
+                <input 
+                  type="text" 
+                  id="taskDescriptionInput" 
+                  placeholder="Например: Разработка REST API отчетов" 
+                  required
+                  autocomplete="off"
+                  maxlength="255"
+                >
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large" id="btnStartTimer">
+                  <span>▶️ Запустить таймер</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Активные сессии прямо сейчас -->
+          <div class="card">
+            <div class="card-header">
+              <h2>⏳ Активные задачи прямо сейчас</h2>
+              <span class="card-hint">Сотрудники, у которых сейчас тикает таймер</span>
+            </div>
+            <div id="activeTimersList" class="active-timers-container">
+              <!-- Динамически заполняется через JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ВКЛАДКА 2: СОТРУДНИКИ -->
+      <section id="tab-employees" class="tab-pane">
+        <div class="grid-two-columns">
+          <!-- Форма добавления сотрудника -->
+          <div class="card">
+            <div class="card-header">
+              <h2>➕ Добавить сотрудника</h2>
+              <span class="card-hint">Регистрация нового работника компании</span>
+            </div>
+            <form id="addEmployeeForm" class="form-vertical">
+              <div class="form-group">
+                <label for="empNameInput">ФИО сотрудника <span class="required">*</span></label>
+                <input 
+                  type="text" 
+                  id="empNameInput" 
+                  placeholder="Например: Роман Васильев" 
+                  required
+                  minlength="2"
+                  maxlength="100"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="empPositionInput">Должность <span class="required">*</span></label>
+                <input 
+                  type="text" 
+                  id="empPositionInput" 
+                  placeholder="Например: DevOps Инженер" 
+                  required
+                  minlength="2"
+                  maxlength="100"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="empDepartmentInput">Отдел / Команда</label>
+                <input 
+                  type="text" 
+                  id="empDepartmentInput" 
+                  placeholder="Например: Инфраструктура" 
+                  maxlength="100"
+                >
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-success" id="btnAddEmployee">
+                  <span>💾 Сохранить сотрудника</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Список всех сотрудников -->
+          <div class="card">
+            <div class="card-header">
+              <h2>👥 Список сотрудников</h2>
+              <span class="card-hint">Статус работы каждого сотрудника в реальном времени</span>
+            </div>
+            <div id="employeesList" class="employees-list-container">
+              <!-- Заполняется через JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ВКЛАДКА 3: ОТЧЁТЫ ЗА ПЕРИОД -->
+      <section id="tab-reports" class="tab-pane">
+        <!-- Панель фильтров -->
+        <div class="card filter-card">
+          <div class="card-header">
+            <h2>🔍 Фильтр отчёта по периоду и сотрудникам</h2>
+            <div class="quick-preset-buttons">
+              <button type="button" class="btn btn-sm btn-outline" data-preset="today">Сегодня</button>
+              <button type="button" class="btn btn-sm btn-outline" data-preset="yesterday">Вчера</button>
+              <button type="button" class="btn btn-sm btn-outline" data-preset="week">Текущая неделя</button>
+              <button type="button" class="btn btn-sm btn-outline" data-preset="month">Текущий месяц</button>
+              <button type="button" class="btn btn-sm btn-outline active-preset" data-preset="all">Всё время</button>
+            </div>
+          </div>
+
+          <form id="reportFilterForm" class="filter-form-grid">
+            <div class="form-group">
+              <label for="filterStartDate">Дата начала</label>
+              <input type="date" id="filterStartDate">
+            </div>
+
+            <div class="form-group">
+              <label for="filterEndDate">Дата окончания</label>
+              <input type="date" id="filterEndDate">
+            </div>
+
+            <div class="form-group">
+              <label for="filterEmployeeSelect">Сотрудник</label>
+              <select id="filterEmployeeSelect">
+                <option value="">Все сотрудники</option>
+              </select>
+            </div>
+
+            <div class="filter-actions">
+              <button type="submit" class="btn btn-primary">
+                <span>📊 Сформировать отчёт</span>
+              </button>
+              <button type="button" id="btnResetFilter" class="btn btn-secondary">
+                <span>Сбросить</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Сводные KPI метрики -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon">⏱️</div>
+            <div class="kpi-content">
+              <span class="kpi-label">Общее рабочее время</span>
+              <span class="kpi-value" id="kpiTotalTime">00:00:00</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-content">
+              <span class="kpi-label">Завершённых задач</span>
+              <span class="kpi-value" id="kpiTotalTasks">0</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon">👤</div>
+            <div class="kpi-content">
+              <span class="kpi-label">Сотрудников с активностью</span>
+              <span class="kpi-value" id="kpiActiveEmployeesCount">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Сводная таблица по сотрудникам за выбранный период -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h2>📈 Общее время каждого сотрудника за выбранный период</h2>
+            <span class="card-hint">Сводные итоги по отработанным часам</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="reportSummaryTable">
+              <thead>
+                <tr>
+                  <th>Сотрудник</th>
+                  <th>Должность / Отдел</th>
+                  <th>Задач выполнено</th>
+                  <th>Общее время (ЧЧ:ММ:СС)</th>
+                </tr>
+              </thead>
+              <tbody id="reportSummaryTableBody">
+                <!-- Заполняется JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="reportSummaryEmpty" class="empty-state hidden">
+            <div class="empty-icon">📭</div>
+            <h3>Нет данных за выбранный период</h3>
+            <p>За указанный временной интервал завершённых записей рабочего времени не найдено.</p>
+          </div>
+        </div>
+
+        <!-- Детализированный журнал записей -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h2>📜 Детализированный журнал задач</h2>
+            <span class="card-hint">Все завершённые рабочие сессии с временными метками</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="reportEntriesTable">
+              <thead>
+                <tr>
+                  <th>Сотрудник</th>
+                  <th>Описание задачи</th>
+                  <th>Начало</th>
+                  <th>Окончание</th>
+                  <th>Длительность</th>
+                </tr>
+              </thead>
+              <tbody id="reportEntriesTableBody">
+                <!-- Заполняется JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="reportEntriesEmpty" class="empty-state hidden">
+            <div class="empty-icon">📋</div>
+            <h3>Журнал задач пуст</h3>
+            <p>В выбранном диапазоне дат нет завершённых задач.</p>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Всплывающие уведомления (Toasts) -->
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
